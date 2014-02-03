@@ -1,0 +1,1 @@
+copy %~dp0\objchk_win7_amd64\amd64\Test1.sys %~dp0\inf\win7amd64

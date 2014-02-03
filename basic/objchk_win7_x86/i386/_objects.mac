@@ -1,0 +1,16 @@
+
+
+386_OBJECTS=\
+ $(OBJ_PATH)\$O\hpmndriver.obj \
+
+
+
+
+
+# lowercased
+BASEDIR=c:\winddk\7600.16385.1
+OBJECT_ROOT=c:\winddk\7600.16385.1
+MAKEDIR_LOWERCASE=j:\windows-driver-dev\prototypes\basic
+OBJ_PATH=j:\windows-driver-dev\prototypes\basic
+CONCURRENT_MIDL=0
+CONCURRENT_MANIFEST_BUILD=0
