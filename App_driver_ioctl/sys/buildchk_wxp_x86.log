@@ -1,0 +1,19 @@
+BUILD: Computing Include file dependencies:
+0>j:\win_7_amd64_driver\v3\sources. unexpected in directory with DIRS file
+0>Ignoring j:\win_7_amd64_driver\v3\sources.
+BUILD: Examining j:\win_7_amd64_driver\v3 directory tree for files to compile.
+oacr invalidate root:x86chk /autocleanqueue
+1>Linking for j:\win_7_amd64_driver\v3 *************
+1>'nmake.exe /nologo BUILDMSG=Stop. -i BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 MAKEDIR_RELATIVE_TO_BASEDIR='
+1>BUILDMSG: Processing j:\win_7_amd64_driver\v3
+2>Compiling and Linking j:\win_7_amd64_driver\v3\app *************
+2>'nmake.exe /nologo BUILDMSG=Stop. -i BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 MAKEDIR_RELATIVE_TO_BASEDIR='
+2>BUILDMSG: Processing j:\win_7_amd64_driver\v3\app
+2>BUILDMSG: _NT_TARGET_VERSION SET TO WINXP
+1>BUILDMSG: _NT_TARGET_VERSION SET TO WINXP
+2>NMAKE : fatal error U1073: don't know how to make 'j:\win_7_amd64_driver\v3\app\objchk_wxp_x86\i386\testapp.obj'
+2>errors in directory j:\win_7_amd64_driver\v3\app
+2>NMAKE : fatal error U1073: don't know how to make 'j:\win_7_amd64_driver\v3\app\objchk_wxp_x86\i386\testapp.obj'
+2>Stop.
+2>nmake.exe /nologo BUILDMSG=Stop. -i BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 MAKEDIR_RELATIVE_TO_BASEDIR= failed - rc = 2
+

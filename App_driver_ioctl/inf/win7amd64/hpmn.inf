@@ -1,0 +1,91 @@
+[Version] 
+Signature = "$Windows NT$" 
+Class=Sample
+ClassGUID={C3077FCD-9C3C-482f-9317-460712F23EFA}
+Provider=%MFGNAME% 
+CatalogFile=KmdfSamples.cat
+DriverVer= 05/23/2012,6.1.7600.16385
+
+[Manufacturer]                          
+%MFGNAME%=DeviceList,NTAMD64
+
+[SourceDisksNames]
+1=%INST_DISK_NAME%
+
+
+[SourceDisksFiles]
+HPMN.sys     = 1
+
+[DestinationDirs]
+DefaultDestDir=10,System32\drivers              
+ClassInstall32_CopyFiles=11
+CoInstaller_CopyFiles = 11
+
+
+[DeviceList]
+%DEV_DESCRIPTION%=DriverInstall,root\HPMNBASIC
+[DeviceList.NTAMD64]
+%DEV_DESCRIPTION%=DriverInstall,root\HPMNBASIC
+
+;;;;;;;;;;;;  Class installation;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[ClassInstall32]
+AddReg=ClassInstall32_AddReg
+CopyFiles=ClassInstall32_CopyFiles
+
+[ClassInstall32_AddReg]
+HKR,,,,"Sample device drivers"
+HKR,,Icon,,101
+
+[ClassInstall32_CopyFiles]	
+
+;;;;;;;;;;;;;;;;;;;;;;;;;  device installation  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[DriverInstall]
+CopyFiles=DriverCopyFiles
+
+[DriverCopyFiles]
+HPMN.sys
+
+[DriverInstall.Services]
+AddService=wdf_basic,0x00000002,DriverService
+
+[DriverService]
+ServiceType=1                           ;;kernel mode driver
+StartType=3                             ;;start on demand
+ErrorControl=1                          ;;normal error handling.
+ServiceBinary=%12%\HPMN.sys
+
+[DriverInstall.HW]
+AddReg = MsiCapability
+
+[MsiCapability]
+HKR, “Interrupt Management”, 0x00000010
+HKR, “Interrupt Management\MessageSignaledInterruptProperties”,0x00000010
+HKR, “Interrupt Management\MessageSignaledInterruptProperties”,MSISupported, 0x00010001, 1
+
+;;;;;;;;;;;;;;;  WDF Coinstaller installation   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[DriverInstall.NT.CoInstallers]
+AddReg=CoInstaller_AddReg
+CopyFiles=CoInstaller_CopyFiles
+
+[CoInstaller_CopyFiles]
+WdfCoInstaller01009.dll
+[SourceDisksFiles]
+WdfCoInstaller01009.dll = 1 ; make sure the number matches with SourceDisksNames
+
+[CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller01009.dll,WdfCoInstaller"
+
+[DriverInstall.Wdf]
+KmdfService = basic, basic_wdfsect
+
+[basic_wdfsect]
+KmdfLibraryVersion = 1.9
+
+[Strings]
+MFGNAME="Kalycito Infotech Private Limited"
+INSTDISK=" Installation Disc"
+DEV_DESCRIPTION="Basic HPMN device"
+INST_DISK_NAME="Basic HPMN device driver installation disk"

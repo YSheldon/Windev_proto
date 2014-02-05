@@ -1,0 +1,16 @@
+
+
+AMD64_OBJECTS=\
+ $(OBJ_PATH)\$O\hpmndriver.obj \
+
+
+
+
+
+# lowercased
+BASEDIR=c:\winddk\7600.16385.1
+OBJECT_ROOT=c:\winddk\7600.16385.1
+MAKEDIR_LOWERCASE=j:\win_7_amd64_driver\v3\sys
+OBJ_PATH=j:\win_7_amd64_driver\v3\sys
+CONCURRENT_MIDL=0
+CONCURRENT_MANIFEST_BUILD=0
