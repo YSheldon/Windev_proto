@@ -190,102 +190,10 @@ HpmnEvtDevicePrepareHardware(
     )
 {
   NTSTATUS status = STATUS_SUCCESS;
-  PDEVICE_CONTEXT devCtx = GetDeviceContext(Device);
-  PCM_PARTIAL_RESOURCE_DESCRIPTOR descriptor;
-  ULONG i=0;
-  ULONG NoofBar=0;
-  BOOLEAN bar0=FALSE;
-  BOOLEAN bar1=FALSE;
-  BOOLEAN bar2=FALSE;
   UNREFERENCED_PARAMETER(ResourceList);
   
   DbgPrint("--> [HPMN]:HpmnEvtDevicePrepareHardware\n");
-PAGED_CODE();
- 
-for(i=0; i < WdfCmResourceListGetCount(ResourceListTranslated); i++)
-{
-  descriptor = WdfCmResourceListGetDescriptor(ResourceListTranslated, i);
-  
-  if(!descriptor)
-   {
-   DbgPrint("[HPMN]:NULL resource returned??\n");
-   return(STATUS_DEVICE_CONFIGURATION_ERROR);
-   }
-
-  switch (descriptor->Type)
-  {
-	case CmResourceTypePort:
-	DbgPrint("[HPMN]:Read Port Information");
-	NoofBar++;
-	break;
-   
-	case CmResourceTypeMemory:
-	if(!bar0&&!bar1&&!bar2)
-		{
-			if(descriptor->u.Memory.Length == HPMN_BAR_LENGTH)
-				{
-					DbgPrint("[HPMN]:Bar0 Information"); 
-					bar0=TRUE;
-					devCtx->MemPhysAddressBar0=descriptor->u.Memory.Start;
-					devCtx->CSRAddressBar0 = MmMapIoSpace(descriptor->u.Memory.Start,
-														  descriptor->u.Memory.Length,
-														  MmNonCached); 
-				}
-				else
-					DbgPrint("[HPMN]:No Bar0 Found");
-		}
- 
-	if(bar0&&!bar1&&!bar2)
-		{
-			if(descriptor->u.Memory.Length == HPMN_BAR_LENGTH)
-				{
-					DbgPrint("[HPMN]:Bar1 Information"); 
-					bar1=TRUE;
-					devCtx->MemPhysAddressBar1=descriptor->u.Memory.Start;
-					devCtx->CSRAddressBar1 = MmMapIoSpace(descriptor->u.Memory.Start,
-												descriptor->u.Memory.Length,
-												MmNonCached); 
-				}
-				else
-				DbgPrint("[HPMN]:No Bar1 Found");
-		}
-  
-	if(bar0&&bar1&&!bar2)
-		{
-			if(descriptor->u.Memory.Length == HPMN_BAR_LENGTH)
-				{
-					DbgPrint("[HPMN]:Bar2 Information"); 
-
-					bar2=TRUE;
-					devCtx->MemPhysAddressBar2=descriptor->u.Memory.Start;
-					devCtx->CSRAddressBar2 = MmMapIoSpace(descriptor->u.Memory.Start,
-											 descriptor->u.Memory.Length,
-										     MmNonCached); 
-				}
-				else
-				DbgPrint("[HPMN]:No Bar2 Found");
-		}
-	NoofBar++;
-	break;
-	
-  case CmResourceTypeInterrupt:
-
-    DbgPrint("[HPMN]:Interrupt Data Encountered");
-		 
-		 
-	if (descriptor->Flags & CM_RESOURCE_INTERRUPT_MESSAGE)
-			{ 
-				DbgPrint("[HPMN]:MSI Interrupt"); 
-			}
-		else
-			{
-				DbgPrint("[HPMN]:Line Interrupt");
-			}
-			
-            break;
-
-   }
-   
+  return status;   
 }
  DbgPrint("<-- [HPMN]:HpmnEvtDevicePrepareHardware\n");
  return status;
