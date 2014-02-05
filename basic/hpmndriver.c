@@ -19,15 +19,25 @@ VOID CustomTimerDpc(
   PVOID SystemArgument2
 );
 
+KSTART_ROUTINE ThreadStart;
+
+VOID ThreadStart(
+  PVOID StartContext
+);
+
+
 KDPC timerDpc;
 
 KTIMER Timer;
 LARGE_INTEGER		   dueTime;
-	LARGE_INTEGER		   counter;
-	LARGE_INTEGER		   Freq;
+LARGE_INTEGER		   counter;
+LARGE_INTEGER		   Freq;
 	
+HANDLE  kThreadHandle;
+OBJECT_ATTRIBUTES ObjectAttributes;
 static unsigned int flag = 0;
-
+static BOOLEAN fkillThread = FALSE;
+static BOOLEAN fwaitThread = FALSE;
 NTSTATUS
 DriverEntry(
     PDRIVER_OBJECT  DriverObject,
@@ -78,6 +88,7 @@ NTSTATUS HpmnEvtDeviceAdd(
 {
   NTSTATUS status;
   WDFDEVICE device;
+  ULONG DesiredAccess = DELETE;
   PDEVICE_CONTEXT devCtx = NULL;
   WDF_OBJECT_ATTRIBUTES attributes;
   WDF_PNPPOWER_EVENT_CALLBACKS pnpPowerCallbacks;
@@ -107,16 +118,19 @@ NTSTATUS HpmnEvtDeviceAdd(
   }
   //dueTime.QuadPart = -10000LL;
  // KeSetTimer(&Timer,dueTime,&timerDpc);
- 
-/*NTSTATUS PsCreateSystemThread(
-  _Out_      PHANDLE ThreadHandle,
-  _In_       ULONG DesiredAccess,
-  _In_opt_   POBJECT_ATTRIBUTES ObjectAttributes,
-  _In_opt_   HANDLE ProcessHandle,
-  _Out_opt_  PCLIENT_ID ClientId,
-  _In_       PKSTART_ROUTINE StartRoutine,
-  _In_opt_   PVOID StartContext
-);*/
+ DbgPrint("Create Thread...");
+ InitializeObjectAttributes(&ObjectAttributes, NULL, OBJ_KERNEL_HANDLE, NULL, NULL);
+ status = PsCreateSystemThread(&kThreadHandle,DesiredAccess,&ObjectAttributes,NULL,
+		  NULL,
+          ThreadStart,
+		  NULL);
+if(status == STATUS_SUCCESS) 
+{
+	DbgPrint("Successful\n");
+	counter = KeQueryPerformanceCounter(&Freq);
+	DbgPrint("%lld\n",counter.QuadPart);
+}
+
   devCtx = GetDeviceContext(device);
 
   DbgPrint("<-- EvtDeviceAdd\n");
@@ -216,10 +230,18 @@ HpmnEvtDeviceReleaseHardware(
     IN  WDFCMRESLIST ResourcesTranslated
     )
 {
-    
-	DbgPrint("[HPMN]:HpmnEvtDeviceReleaseHardware");
+    	LARGE_INTEGER delay;
+	DbgPrint("-->[HPMN]:HpmnEvtDeviceReleaseHardware");
     UNREFERENCED_PARAMETER(Device);
 	UNREFERENCED_PARAMETER(ResourcesTranslated);
+	
+	fkillThread = TRUE;
+	//delay.QuadPart = 1000LL;
+	//KeDelayExecutionThread(KernelMode ,FALSE, &delay);
+	// wait here for timer thread to exit
+	while(!fwaitThread);
+	ZwClose(kThreadHandle);
+	DbgPrint("<--[HPMN]:HpmnEvtDeviceReleaseHardware");
 	return STATUS_SUCCESS;
 }
 
@@ -245,4 +267,34 @@ VOID CustomTimerDpc(
 		KeSetTimer(&Timer,dueTime,&timerDpc);
 		flag++;
 	}
+}
+
+VOID ThreadStart(
+  PVOID StartContext
+)
+{
+	int count = 0;
+	unsigned long long old = 0, new,dif,total = 0;
+	LARGE_INTEGER delay;
+	
+	UNREFERENCED_PARAMETER(StartContext);
+	DbgPrint("In Kernel Thread new\n");
+	//delay.QuadPart = LL;
+	while(!fkillThread)
+	{
+		counter = KeQueryPerformanceCounter(&Freq);
+		new = counter.QuadPart;
+		if(old)
+		{
+			dif = new - old;
+			total += dif ;
+		}
+		old = new;
+		//DbgPrint("old:%lld New :%lld dif:%lld us\n",old,new,dif);
+		count++;
+		//KeDelayExecutionThread(KernelMode ,FALSE, &delay);
+	}
+	
+	DbgPrint("Total:%lld Average:%lld us\n",total,(total/count));
+	fwaitThread = TRUE;
 }

@@ -1,3 +1,4 @@
+BUILD: Computing Include file dependencies:
 BUILD: Examining j:\windows-driver-dev\prototypes\basic directory for files to compile.
 oacr invalidate root:amd64chk /autocleanqueue
 1>Compiling and Linking j:\windows-driver-dev\prototypes\basic *************
@@ -66,13 +67,17 @@ oacr invalidate root:amd64chk /autocleanqueue
 1> /FIC:\WinDDK\7600.16385.1\inc\api\warning.h
 1> .\hpmndriver.c 
 1>hpmndriver.c
-1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(41) : warning C4101: 'driver' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(50) : warning C4101: 'driver' : unreferenced local variable
 1>warnings in directory j:\windows-driver-dev\prototypes\basic
-1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(41) : warning C4101: 'driver' : unreferenced local variable
-1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(40) : warning C4101: 'attrib' : unreferenced local variable
-1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(40) : warning C4101: 'attrib' : unreferenced local variable
-1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(86) : warning C4101: 'ioQConfig' : unreferenced local variable
-1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(86) : warning C4101: 'ioQConfig' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(50) : warning C4101: 'driver' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(49) : warning C4101: 'attrib' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(49) : warning C4101: 'attrib' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(95) : warning C4101: 'ioQConfig' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(95) : warning C4101: 'ioQConfig' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(233) : warning C4101: 'delay' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(233) : warning C4101: 'delay' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(278) : warning C4101: 'delay' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(278) : warning C4101: 'delay' : unreferenced local variable
 1> C:\WinDDK\7600.16385.1\Bin\amd64\oacr\oacrlink /out:j:\windows-driver-dev\prototypes\basic\objchk_win7_amd64\amd64\Test1.sys /machine:amd64 @j:\windows-driver-dev\prototypes\basic\objchk_win7_amd64\amd64\lnk.rsp
 1>Microsoft (R) Incremental Linker Version 9.00.30729.207
 1>Copyright (C) Microsoft Corporation.  All rights reserved.

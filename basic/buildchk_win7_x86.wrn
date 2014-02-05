@@ -1,4 +1,6 @@
 1>warnings in directory j:\windows-driver-dev\prototypes\basic
-1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(40) : warning C4101: 'driver' : unreferenced local variable
-1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(39) : warning C4101: 'attrib' : unreferenced local variable
-1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(84) : warning C4101: 'ioQConfig' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(50) : warning C4101: 'driver' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(49) : warning C4101: 'attrib' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(95) : warning C4101: 'ioQConfig' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(233) : warning C4101: 'delay' : unreferenced local variable
+1>j:\windows-driver-dev\prototypes\basic\hpmndriver.c(278) : warning C4101: 'delay' : unreferenced local variable
