@@ -32,6 +32,7 @@ KTIMER Timer;
 LARGE_INTEGER		   dueTime;
 LARGE_INTEGER		   counter;
 LARGE_INTEGER		   Freq;
+ULONG				   min,max,current;
 	
 HANDLE  kThreadHandle;
 OBJECT_ATTRIBUTES ObjectAttributes;
@@ -72,7 +73,11 @@ DriverEntry(
 		//DbgPrint("%lld\n",counter.QuadPart);
 		//flag++;
 	//}
-	DbgPrint("Initialize Timer\n");
+	DbgPrint("Initialize Timer nEW\n");
+	
+	//KeQueryTimerResolution(&max,&min,&current);
+	
+	//ExSetTimerResolution(100000,TRUE);
 	//KeInitializeTimer(&Timer);
 	//KeInitializeDpc(&timerDpc,CustomTimerDpc,NULL);
     //driverContext = GetDriverContext(driver);
@@ -116,8 +121,8 @@ NTSTATUS HpmnEvtDeviceAdd(
     DbgPrint("WdfDeviceCreate failed with status 0x%08x\n");
     return status;
   }
-  //dueTime.QuadPart = -10000LL;
- // KeSetTimer(&Timer,dueTime,&timerDpc);
+ // dueTime.QuadPart = -10000LL;
+//  KeSetTimer(&Timer,dueTime,&timerDpc);
  DbgPrint("Create Thread...");
  InitializeObjectAttributes(&ObjectAttributes, NULL, OBJ_KERNEL_HANDLE, NULL, NULL);
  status = PsCreateSystemThread(&kThreadHandle,DesiredAccess,&ObjectAttributes,NULL,
@@ -236,11 +241,13 @@ HpmnEvtDeviceReleaseHardware(
 	UNREFERENCED_PARAMETER(ResourcesTranslated);
 	
 	fkillThread = TRUE;
-	//delay.QuadPart = 1000LL;
+	delay.QuadPart = 1000LL;
 	//KeDelayExecutionThread(KernelMode ,FALSE, &delay);
 	// wait here for timer thread to exit
 	while(!fwaitThread);
 	ZwClose(kThreadHandle);
+	//current = 10000LL;
+	//ExSetTimerResolution(0, FALSE);
 	DbgPrint("<--[HPMN]:HpmnEvtDeviceReleaseHardware");
 	return STATUS_SUCCESS;
 }
@@ -263,7 +270,7 @@ VOID CustomTimerDpc(
 	DbgPrint("%lld %lld\n",counter.QuadPart,Freq.QuadPart);
 	if(flag < 1000)
 	{
-		dueTime.QuadPart = -25000LL;
+		dueTime.QuadPart = -100LL;
 		KeSetTimer(&Timer,dueTime,&timerDpc);
 		flag++;
 	}
@@ -295,6 +302,6 @@ VOID ThreadStart(
 		//KeDelayExecutionThread(KernelMode ,FALSE, &delay);
 	}
 	
-	DbgPrint("Total:%lld Average:%lld us\n",total,(total/count));
+	DbgPrint("Total:%lld Average:%lld us %d\n",total,(total/count),count);
 	fwaitThread = TRUE;
 }

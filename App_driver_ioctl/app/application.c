@@ -14,6 +14,10 @@ __user_code
 #include <strsafe.h>
 #include "public.h"
 
+#include <conio.h>
+#include <fcntl.h>
+#include <io.h>
+
 VOID
 DoIoctls(
     HANDLE hDevice
@@ -80,11 +84,19 @@ DoIoctls(
     HANDLE hDevice
     )
 {
-    char OutputBuffer[100];
-    char InputBuffer[200];
+    char OutputBuffer[100000];
+    char InputBuffer[100000];
+	char cKey = 0;
     BOOL bRc;
     ULONG bytesReturned;
-
+	LARGE_INTEGER startTime,endTime,frequency;
+	ULONGLONG Rxdif,Txdif,TxTotal = 0,RxTotal = 0,count = 0;
+	LONGLONG multiplier;
+	
+	QueryPerformanceFrequency(&frequency);
+	multiplier = 1000000000LL/frequency.QuadPart;
+	
+	printf("Frequency %lld Mult:%lld\n",frequency.QuadPart,multiplier);
     //
     // Printing Input & Output buffer pointers and size
     //
@@ -100,12 +112,23 @@ DoIoctls(
 
     printf("\nCalling DeviceIoControl METHOD_TX\n");
 
-    if(FAILED(StringCchCopy(InputBuffer, sizeof(InputBuffer),
-               "this String is from User Application; using METHOD_TX"))) {
-        return;
-    }
-	printf("Data in TX:%s",InputBuffer);
-    bRc = DeviceIoControl ( hDevice,
+  //  if(FAILED(StringCchCopy(InputBuffer, sizeof(InputBuffer),
+    //           "this String is from User Application; using METHOD_TX"))) {
+   //     return;
+   // }
+   
+	memset(InputBuffer,0xAF,200);
+	//printf("Data in TX:%s",InputBuffer);
+	while (cKey != 0x1B && count != 1000000)
+	{
+		if( _kbhit() )
+        {
+            cKey    = (BYTE)_getch();
+		}
+		count++;
+		
+		QueryPerformanceCounter(&startTime);
+		bRc = DeviceIoControl ( hDevice,
                             (DWORD) IOCTL_HPMN_METHOD_TX ,
                             InputBuffer,
                             (DWORD) strlen( InputBuffer )+1,
@@ -114,46 +137,61 @@ DoIoctls(
                             &bytesReturned,
                             NULL
                             );
+		QueryPerformanceCounter(&endTime);
+		
+		Txdif = (endTime.QuadPart - startTime.QuadPart);
+		TxTotal += Txdif;
+		if ( !bRc )
+		{
+			printf ( "Error in DeviceIoControl : : %d", GetLastError());
+			return;
+		}
 
-    if ( !bRc )
-    {
-        printf ( "Error in DeviceIoControl : : %d", GetLastError());
-        return;
-    }
+		//printf("Number of bytes transfered from OutBuffer: %d\n",
+										//strlen( InputBuffer )+1);
+		
+		//printf("Time taken is %lld us\n",dif);									
 
-    printf("    Number of bytes transfered from OutBuffer: %d\n",
-                                    bytesReturned);
+		//
+		// Performing METHOD_RX
+		//
 
-    //
-    // Performing METHOD_RX
-    //
+		//printf("\nCalling DeviceIoControl METHOD_RX\n");
+		//if(FAILED(StringCchCopy(InputBuffer, sizeof(InputBuffer),
+		//		   "this String is from User Application; using METHOD_OUT_DIRECT"))){
+		//	return;
+		//}
 
-    printf("\nCalling DeviceIoControl METHOD_RX\n");
-    if(FAILED(StringCchCopy(InputBuffer, sizeof(InputBuffer),
-               "this String is from User Application; using METHOD_OUT_DIRECT"))){
-        return;
-    }
+		memset(OutputBuffer, 0, sizeof(OutputBuffer));
+		QueryPerformanceCounter(&startTime);
+		bRc = DeviceIoControl ( hDevice,
+								(DWORD) IOCTL_HPMN_METHOD_RX,
+								InputBuffer,
+								(DWORD) strlen( InputBuffer )+1,
+								OutputBuffer,
+								sizeof( OutputBuffer),
+								&bytesReturned,
+								NULL
+								);
+		QueryPerformanceCounter(&endTime);
+		
+		Rxdif = (endTime.QuadPart - startTime.QuadPart);
+		RxTotal += Rxdif;
+		if ( !bRc )
+		{
+			printf ( "Error in DeviceIoControl : : %d", GetLastError());
+			return;
+		}
 
-    memset(OutputBuffer, 0, sizeof(OutputBuffer));
-
-    bRc = DeviceIoControl ( hDevice,
-                            (DWORD) IOCTL_HPMN_METHOD_RX,
-                            InputBuffer,
-                            (DWORD) strlen( InputBuffer )+1,
-                            OutputBuffer,
-                            sizeof( OutputBuffer),
-                            &bytesReturned,
-                            NULL
-                            );
-
-    if ( !bRc )
-    {
-        printf ( "Error in DeviceIoControl : : %d", GetLastError());
-        return;
-    }
-
-    printf("    OutBuffer (%d): %s\n", bytesReturned, OutputBuffer);
-
+		//	printf("OutBuffer(%d): %x\n", bytesReturned, OutputBuffer[0]);
+	
+	}
+	
+    printf("Time taken for Rx %lld us  Tx %lld us in %lld TotalRx:%lld TTx:%lld\n", \
+														(((RxTotal)/count)*multiplier)/1000, \
+														(((TxTotal)/count)*multiplier)/1000,count, \
+														(((RxTotal))*multiplier)/1000, \
+														(((TxTotal))*multiplier)/1000);	
     return;
 
 }
