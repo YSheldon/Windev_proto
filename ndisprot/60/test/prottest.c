@@ -25,7 +25,7 @@
 #include <memory.h>
 #include <ctype.h>
 #include <malloc.h>
-
+#include <conio.h>
 #include <winerror.h>
 #include <winsock.h>
 
@@ -55,12 +55,19 @@
 #endif
 
 #define MAX_NDIS_DEVICE_NAME_LEN        256
+#define DATA_LENGTH 60
 
 CHAR            NdisProtDevice[] = "\\\\.\\\\NdisProt";
 CHAR *          pNdisProtDevice = &NdisProtDevice[0];
 
+
+UCHAR aframe[DATA_LENGTH] = {0x01,0x11,0x1e,0x00,0x00,0x02,0x00,0x27,0x0e,0x37,0x7b,0xfa,0x88,0xab,0x04,0xff
+,0x01,0xfd,0x01,0x00,0x00,0x00,0x04,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+
 BOOLEAN         DoEnumerate = FALSE;
-BOOLEAN         DoReads = FALSE;
+BOOLEAN         DoReads = FALSE,DoWrites = FALSE;
 INT             NumberOfPackets = -1;
 ULONG           PacketLength = 16;
 UCHAR           SrcMacAddr[MAC_ADDR_LEN];
@@ -160,7 +167,7 @@ GetOptions(
                     break;
 
                 case 'w':
-                    DoReads = FALSE;
+                    DoWrites = TRUE;
                     break;
 
                 case 'l':
@@ -392,18 +399,18 @@ GetSrcMac(
 
 
 
-VOID
+BOOLEAN
 DoReadProc(
     HANDLE  Handle
     )
 {
     PUCHAR      pReadBuf = NULL;
-    INT         ReadCount = 0;
-    BOOLEAN     bSuccess;
+    static INT         ReadCount = 0;
+    BOOLEAN     bSuccess,ret;
     ULONG       BytesRead;
 	LARGE_INTEGER startTime,endTime;
 	
-    DEBUGP(("DoReadProc\n"));
+  //  DEBUGP(("DoReadProc\n"));
 
     do
     {
@@ -420,31 +427,43 @@ DoReadProc(
         {
 #pragma prefast(suppress: 8193, "bSuccess is examined below")
 
-			QueryPerformanceCounter(&startTime);
+			//QueryPerformanceCounter(&startTime);
             bSuccess = (BOOLEAN)ReadFile(
                                     Handle,
                                     (LPVOID)pReadBuf,
                                     PacketLength,
                                     &BytesRead,
                                     NULL);
-			QueryPerformanceCounter(&endTime);						
+			//QueryPerformanceCounter(&endTime);
             if (!bSuccess)
             {
                 PRINTF(("DoReadProc: ReadFile failed on Handle %p, error %x\n",
                         Handle, GetLastError()));
+                ret = FALSE;
                 break;
             }
-			rxcount++;
-			Rxdif = (endTime.QuadPart - startTime.QuadPart);
-			RxTotal += Rxdif;
-            ReadCount++;
 
-           // DEBUGP(("DoReadProc: read pkt # %d, %d bytes\n", ReadCount, BytesRead));
-
-            if ((NumberOfPackets != -1) && (ReadCount == NumberOfPackets))
+            if(pReadBuf[5] == 0x01)
             {
-                break;
+            	ret = TRUE;
+            	//break;
             }
+            else
+            {
+            	ret = FALSE;
+            	///;
+            }
+			//rxcount++;
+			//Rxdif = (endTime.QuadPart - startTime.QuadPart);
+			//RxTotal += Rxdif;
+           ReadCount++;
+
+        //   DEBUGP(("DoReadProc: read pkt # %d, %d bytes\n", ReadCount, BytesRead));
+           break;
+           // if ((NumberOfPackets != -1) && (ReadCount == NumberOfPackets))
+           // {
+           //     break;
+           // }
         }
     }
     while (FALSE);
@@ -454,7 +473,8 @@ DoReadProc(
         free(pReadBuf);
     }
 
-    PRINTF(("DoReadProc finished: read %d packets\n", ReadCount));
+    return ret;;
+    //PRINTF(("DoReadProc finished: read %d packets\n", ReadCount));
 
 }
 
@@ -467,12 +487,12 @@ DoWriteProc(
     PUCHAR      pWriteBuf = NULL;
     PUCHAR      pData;
     UINT        i;
-    INT         SendCount;
+    static INT         SendCount;
     PETH_HEADER pEthHeader;
     DWORD       BytesWritten;
     BOOLEAN     bSuccess;
 	LARGE_INTEGER startTime,endTime;
-    DEBUGP(("DoWriteProc\n"));
+   // DEBUGP(("DoWriteProc\n"));
     SendCount = 0;
 
     do
@@ -504,12 +524,13 @@ DoWriteProc(
         {
             *pData++ = (UCHAR)i;
         }
+
+        memcpy(&pWriteBuf[14],&aframe[14],(DATA_LENGTH-15));
+        //SendCount = 0;
         
-        SendCount = 0;
-        
-        while (TRUE)
+        //while (TRUE)
         {
-            QueryPerformanceCounter(&startTime);
+          //  QueryPerformanceCounter(&startTime);
             bSuccess = (BOOLEAN)WriteFile(
                                     Handle,
                                     pWriteBuf,
@@ -517,24 +538,24 @@ DoWriteProc(
                                     &BytesWritten,
                                     NULL);
 									
-            QueryPerformanceCounter(&endTime);
+         //   QueryPerformanceCounter(&endTime);
 							
             if (!bSuccess)
             {
-                PRINTF(("DoWriteProc: WriteFile failed on Handle %p\n", Handle));
+                PRINTF(("DoWriteProc: WriteFile failed on Handle %p %x\n", Handle,GetLastError()));
                 break;
             }
-				txcount++;	
-			Txdif = (endTime.QuadPart - startTime.QuadPart);
-			TxTotal += Txdif;
+			//	txcount++;
+			//Txdif = (endTime.QuadPart - startTime.QuadPart);
+			//TxTotal += Txdif;
             SendCount++;
             
             //DEBUGP(("DoWriteProc: sent %d bytes\n", BytesWritten));
 
-            if ((NumberOfPackets != -1) && (SendCount == NumberOfPackets))
-            {
-                break;
-            }
+            //if ((NumberOfPackets != -1) && (SendCount == NumberOfPackets))
+           // {
+           //     break;
+          //  }
         }
 
     }
@@ -545,8 +566,8 @@ DoWriteProc(
         free(pWriteBuf);
     }
 
-    PRINTF(("DoWriteProc: finished sending %d packets of %d bytes each\n",
-            SendCount, PacketLength));
+   // PRINTF(("DoWriteProc: finished sending %d packets of %d bytes each\n",
+     //       SendCount, PacketLength));
 }
 
 VOID
@@ -608,7 +629,9 @@ main(
 )
 {
     HANDLE      DeviceHandle;
+    CHAR		cKey = 0;
 	LARGE_INTEGER frequency;
+	int count = 0;
     DeviceHandle = INVALID_HANDLE_VALUE;
 	QueryPerformanceFrequency(&frequency);
 	multiplier = 1000000000LL/frequency.QuadPart;
@@ -671,13 +694,33 @@ main(
 														 rxcount, \
 														(((RxTotal))*multiplier)/1000);	
         }
-        else
+        else if (DoWrites)
         {
             DoWriteProc(DeviceHandle);
            // DoReadProc(DeviceHandle);
-			printf("Time taken for Tx %lld us in %lld TTx:%lld\n", \
+			//printf("Time taken for Tx %lld us in %lld TTx:%lld\n", \
 														(((TxTotal)/txcount)*multiplier)/1000,txcount, \
 														(((TxTotal))*multiplier)/1000);	
+        }
+        else
+        {
+        	while(cKey != 0x1B)
+        	{
+        		if(_kbhit())
+        		{
+        			cKey = (char)_getch();
+        		}
+
+				if(DoReadProc(DeviceHandle))
+				{
+					DoWriteProc(DeviceHandle);
+				}
+				count++;
+				if ((NumberOfPackets != -1) && (count == NumberOfPackets))
+			    {
+				  break;
+				}
+        	}
         }
 
     }
