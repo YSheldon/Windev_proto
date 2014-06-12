@@ -54,6 +54,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define OPLKMP_NDIS_MAJOR_VERSION       6
 #define OPLKMP_NDIS_MINOR_VERSION       0
 
+#define MINIPORT_TIMER_TAG  'TxuM'
+
+
+
 /////////////////////////////////////////////////////////////////////////////////
 //                          FUNCTION PROTOTYPES                                //
 /////////////////////////////////////////////////////////////////////////////////
@@ -96,4 +100,6 @@ MINIPORT_CANCEL_OID_REQUEST miniport_cancelOidRequest;
 MINIPORT_RESET miniport_reset;
 
 MINIPORT_PROCESS_SG_LIST miniport_sgListHandler;
+
+NDIS_TIMER_FUNCTION timerDpc;
 #endif

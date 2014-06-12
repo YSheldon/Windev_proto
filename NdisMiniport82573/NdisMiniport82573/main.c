@@ -234,7 +234,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define EDRV_SAMPLE_NUM         10000
 
-#define DATA_LENGTH             1000
+#define DATA_LENGTH             60
+#define DELAY                   50000LL
+#define SOC_JITTER_TEST
 //------------------------------------------------------------------------------
 // local types
 //------------------------------------------------------------------------------
@@ -267,6 +269,7 @@ typedef struct
     NDIS_HANDLE             pDeviceHandle;       ///< From NdisMRegisterDeviceEx
     NDIS_HANDLE             pAdapterHandle;      ///< Miniport adapter handle
     NDIS_HANDLE             pInterruptHandle;    ///< Interrupt handle
+    NDIS_HANDLE             timerObjHandle;            ///< Ndis Timer object handle
     void*                   pIoAddr;             ///< Pointer to register space of Ethernet controller
     UINT                    ioLength;
 
@@ -324,13 +327,13 @@ NDIS_OID supportedOids[6] =
 
 };
 
-
-UCHAR aframe[DATA_LENGTH] = { 0x01, 0x11, 0x1e, 0x00, 0x00, 0x01, 0x00, 0x27, 0x0e, 0x37, 0x7b, 0xfa, 0x88, 0xab, 0x04, 0xff
+UCHAR aframe[DATA_LENGTH] = { 0x01, 0x11, 0x1e, 0x00, 0x00, 0x01, 0x00, 0x27, 0x0e, 0x37, 0x7b, 0xfa, 0x88, 0xab, 0x01, 0xff
 , 0xf0, 0xfd, 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 , 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 , 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
 BOOLEAN fSend = FALSE;
+
 //------------------------------------------------------------------------------
 // local function prototypes
 //------------------------------------------------------------------------------
@@ -458,6 +461,7 @@ NDIS_STATUS miniport_initialize(IN  NDIS_HANDLE adapterHandle_p, IN  NDIS_HANDLE
     NDIS_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES        generalAttributes;
     NDIS_SG_DMA_DESCRIPTION                         dmaDescription;
     NDIS_MINIPORT_INTERRUPT_CHARACTERISTICS         intrChars;
+    NDIS_TIMER_CHARACTERISTICS                      timerChars;
     INT                                             i;
     // store the adapter handle for future references
     instance_l.pAdapterHandle = adapterHandle_p;
@@ -639,6 +643,31 @@ NDIS_STATUS miniport_initialize(IN  NDIS_HANDLE adapterHandle_p, IN  NDIS_HANDLE
     // enable interrupts
     EDRV_REGDW_WRITE(EDRV_REGDW_IMS, EDRV_REGDW_INT_MASK_DEF);
 
+#ifdef SOC_JITTER_TEST
+    // Create Ndis Timer Object
+    NdisZeroMemory(&timerChars, sizeof(timerChars));
+
+    {C_ASSERT(NDIS_SIZEOF_TIMER_CHARACTERISTICS_REVISION_1 <= sizeof(timerChars)); }
+    timerChars.Header.Type = NDIS_OBJECT_TYPE_TIMER_CHARACTERISTICS;
+    timerChars.Header.Size = NDIS_SIZEOF_TIMER_CHARACTERISTICS_REVISION_1;
+    timerChars.Header.Revision = NDIS_TIMER_CHARACTERISTICS_REVISION_1;
+
+    timerChars.TimerFunction = timerDpc;
+    timerChars.FunctionContext = &instance_l;
+    timerChars.AllocationTag = MINIPORT_TIMER_TAG;
+
+    status = NdisAllocateTimerObject(
+                                    adapterHandle_p,
+                                    &timerChars,
+                                    &instance_l.timerObjHandle);
+    if (status != NDIS_STATUS_SUCCESS)
+    {
+        status = NDIS_STATUS_FAILURE;
+        DbgPrint("Timer Creation Failed\n");
+        goto ExitFail;
+    }
+    ExSetTimerResolution(10000, TRUE);
+#endif
     // Prepare frame for send test
     NdisMoveMemory(instance_l.pTxBuf, aframe, DATA_LENGTH);
     goto Exit;
@@ -1132,8 +1161,22 @@ static void processInterrupt(void)
 
                         if (rxBuffer[14] == 3)
                         {
-                            //DbgPrint("SoC Received \n");
+#ifdef SOC_JITTER_TEST
+                            LARGE_INTEGER liDelay;
+                            //ndisprotAllocateAndSendNetBufferList(pAdapt);
+                            DbgPrint("Start 1.0 \n");
+                            fSend = TRUE;
+                            liDelay.QuadPart = -(DELAY);
+                            NdisSetTimerObject(instance_l.timerObjHandle, liDelay, 0, NULL);
+                        }
+                        else if (rxBuffer[14] == 4)
+                        {
+                            DbgPrint("Stop 1.0\n");
+                            fSend = FALSE;
+
+#else
                             sendFrame(0, DATA_LENGTH);
+#endif
                         }
 
                     }
@@ -1595,3 +1638,36 @@ static NDIS_STATUS sendFrame(UINT32 bufferNumber_p, UINT16 size_p)
     return NDIS_STATUS_SUCCESS;
 
 }
+
+//------------------------------------------------------------------------------
+/**
+\brief
+
+This routine simulates the DPC handler of a send complete hardware
+interrupt.
+
+\param  adapterContext_p The Adapter object for which send-completions are to 
+                         be done
+\param  haltAction_p
+
+\ingroup module_miniport
+*/
+//------------------------------------------------------------------------------
+#ifdef SOC_JITTER_TEST
+void timerDpc(PVOID unusedParameter1_p, PVOID functionContext_p, PVOID unusedParameter2_p,
+              PVOID unusedParameter3_p)
+{
+    LARGE_INTEGER liDelay;
+    UNREFERENCED_PARAMETER(functionContext_p);
+    UNREFERENCED_PARAMETER(unusedParameter1_p);
+    UNREFERENCED_PARAMETER(unusedParameter2_p);
+    UNREFERENCED_PARAMETER(unusedParameter3_p);
+
+    if (fSend == TRUE)
+    {
+        liDelay.QuadPart = -(DELAY);
+        NdisSetTimerObject(instance_l.timerObjHandle, liDelay, 0, NULL);
+        sendFrame(0,DATA_LENGTH);
+    }
+}
+#endif
