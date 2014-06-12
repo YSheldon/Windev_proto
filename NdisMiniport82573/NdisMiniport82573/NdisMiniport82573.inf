@@ -1,0 +1,93 @@
+;
+; NdisMiniport82573.inf
+;
+
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = Net
+ClassGuid   = {4d36e972-e325-11ce-bfc1-08002be10318}
+Provider    = %ManufacturerName%
+DriverVer=06/06/2014,1.0.0
+CatalogFile=
+
+[Manufacturer]
+%ManufacturerName%  =OPLK, NT$ARCH$
+
+[ControlFlags]
+ExcludeFromSelect = *
+
+[OPLK.NT$ARCH$]
+; DisplayName                 Section             DeviceID
+; -----------                 -------             --------
+%OPLK.DevDesc%              = OPLK.82573,       PCI\VEN_8086&DEV_109A&SUBSYS_00011179
+%OPLK.DevDesc%              = OPLK.82573,       PCI\VEN_8086&DEV_109A&SUBSYS_FF001179
+%OPLK.DevDesc%              = OPLK.82573,       PCI\VEN_8086&DEV_109A&SUBSYS_207E17AA
+%OPLK.DevDesc%              = OPLK.82573,       PCI\VEN_8086&DEV_109A
+
+[OPLK.82573]
+Characteristics = 0x84 ; NCF_HAS_UI | NCF_PHYSICAL
+BusType         = 5    ; PCI
+AddReg          = oplk.reg
+CopyFiles       = oplk.CopyFiles
+*IfType         = 6     ; IF_TYPE_ETHERNET_CSMACD
+*MediaType      = 0     ; NdisMedium802_3
+*PhysicalMediaType = 14 ; NdisPhysicalMedium802_3
+
+[OPLK.82573.Services]
+AddService = oplkMiniport, 2, oplk.Service, oplk.EventLog
+
+[OPLK.82573.HW]
+Needs = PciIoSpaceNotRequired
+AddReg = MSI.reg
+
+
+[oplk.reg]
+HKR, Ndi\Interfaces,                            UpperRange,             0, "ndis5"
+HKR, Ndi\Interfaces,                            LowerRange,             0, "ethernet"
+HKR, Ndi,                                       Service,                0, "oplkMiniport"
+
+[MSI.reg]
+HKR, "Interrupt Management", 0x00000010
+HKR, "Interrupt Management\MessageSignaledInterruptProperties", 0x00000010
+HKR, "Interrupt Management\MessageSignaledInterruptProperties", MSISupported, 0x00010001, 1
+HKR, "Interrupt Management\MessageSignaledInterruptProperties", MessageNumberLimit, 0x00010001, 1
+
+[oplk.CopyFiles]
+NdisMiniport82573.sys,,,2
+
+[SourceDisksNames]
+1 = %DiskName%,NdisMiniport82573.sys,,""
+
+[SourceDisksFiles]
+NdisMiniport82573.sys = 1,, ; on distribution disk 1
+
+[oplk.Service]
+DisplayName     = %OPLK.Service.DispName%
+ServiceType     = 1 ;%SERVICE_KERNEL_DRIVER%
+StartType       = 3 ;%SERVICE_DEMAND_START%
+ErrorControl    = 1 ;%SERVICE_ERROR_NORMAL%
+ServiceBinary   = %12%\NdisMiniport82573.sys
+LoadOrderGroup  = NDIS
+
+[oplk.EventLog]
+AddReg = oplk.AddEventLog.reg
+
+[oplk.AddEventLog.reg]
+HKR, , EventMessageFile, 0x00020000, %EventLogMessage%
+HKR, , TypesSupported,   0x00010001, 7
+
+;-----------------------------------------------------------------------------
+; DestinationDirs
+;
+[DestinationDirs]
+DefaultDestDir                = 11
+oplk.CopyFiles                = 12
+
+
+[Strings]
+ManufacturerName="Kalycito Infotech Private Limited"
+ClassName=""
+DiskName="NdisMiniport82573 Source Disk"
+OPLK.DevDesc = "openPOWERLINK miniport prototype"
+OPLK.Service.DispName = "openPOWERLINK Prototype Service"
+EventLogMessage  = "%SystemRoot%\System32\netevent.dll;%SystemRoot%\System32\drivers\NdisMiniport82573.sys"
