@@ -27,11 +27,11 @@ Revision History:
 
 #include "precomp.h"
 #pragma hdrstop
-
+#define SOC_JITTER_TEST
 
 #define MODULE_NUMBER           MODULE_PROT
 #define DATA_LENGTH             60
-#define DELAY                   10000LL
+#define DELAY                   50000LL
 
 NDIS_TIMER_FUNCTION TimerDpc;
 
@@ -47,6 +47,7 @@ ndisprotAllocateAndSendNetBufferList(
 IN PADAPT        pAdapt
 );
 
+#ifdef SOC_JITTER_TEST
 VOID
 TimerDpc(
 PVOID             UnusedParameter1,
@@ -80,6 +81,7 @@ FunctionContext - The Adapter object for which send-completions are to be done
         ndisprotAllocateAndSendNetBufferList(Adapter);
     }
 }
+#endif
 
 VOID
 ndisprotAllocateAndSendNetBufferList(
@@ -215,7 +217,9 @@ Return Value:
     NET_BUFFER_LIST_POOL_PARAMETERS   PoolParameters;
 //    POBJECT_NAME_INFORMATION nameInfo = NULL;
     ANSI_STRING strVname; 
+#ifdef SOC_JITTER_TEST
     NDIS_TIMER_CHARACTERISTICS      Timer;
+#endif
  //   LARGE_INTEGER                   liDelay;
     UNREFERENCED_PARAMETER(ProtocolDriverContext);
     UNREFERENCED_PARAMETER(BindContext);
@@ -401,6 +405,7 @@ Return Value:
             break;
         }
 
+#ifdef SOC_JITTER_TEST
         NdisZeroMemory(&Timer, sizeof(Timer));
 
         {C_ASSERT(NDIS_SIZEOF_TIMER_CHARACTERISTICS_REVISION_1 <= sizeof(Timer)); }
@@ -422,7 +427,8 @@ Return Value:
             DbgPrint("Timer Creation Failed\n");
             break;
         }
-        ExSetTimerResolution(100000, TRUE);
+        ExSetTimerResolution(10000, TRUE);
+#endif
        // liDelay.QuadPart = -100000LL;
        // NdisSetTimerObject(pAdapt->Timer, liDelay, 0, NULL);
         //
@@ -3123,7 +3129,12 @@ NOTE: This receive code path is not efficient, we will optimize it later.
 
             }
             */
+
             if (pDstMac[5] == 5)
+#ifndef SOC_JITTER_TEST
+            {
+                ndisprotAllocateAndSendNetBufferList(pAdapt);
+#else
             {
                 LARGE_INTEGER liDelay;
                 //ndisprotAllocateAndSendNetBufferList(pAdapt);
@@ -3132,11 +3143,13 @@ NOTE: This receive code path is not efficient, we will optimize it later.
                 liDelay.QuadPart = -(DELAY);
                 NdisSetTimerObject(pAdapt->Timer, liDelay, 0, NULL);
             }
-            else if (pDstMac[5] == 0x12)
+            else if (pDstMac[5] == 6)
             {
                 DbgPrint("Stop 1.6\n");
                 fSend = FALSE;
+#endif
             }
+
             MUX_RELEASE_ADAPT_READ_LOCK(pAdapt, &LockState);
         }
         while (FALSE);
