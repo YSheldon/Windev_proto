@@ -1,0 +1,11 @@
+obj*
+*.err
+*.wrn
+*log
+*.sys
+*.exe
+*.dll
+*.bat
+*.sdf
+Win*
+x64
