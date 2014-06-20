@@ -1,0 +1,90 @@
+;
+; HpetProtoWdf.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=System ;
+ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=HpetProtoWdf.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+HpetProtoWdf.sys  = 1,,
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%HpetProtoWdf.DeviceDesc%=HpetProtoWdf_Device, *PNP0103 ; HPET
+[HpetProtoWdf_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+HpetProtoWdf.sys
+
+;-------------- Service installation
+[HpetProtoWdf_Device.NT.Services]
+AddService = HpetProtoWdf,%SPSVCINST_ASSOCSERVICE%, HpetProtoWdf_Service_Inst
+
+; -------------- HpetProtoWdf driver install sections
+[HpetProtoWdf_Service_Inst]
+DisplayName    = %HpetProtoWdf.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\HpetProtoWdf.sys
+LoadOrderGroup = Extended Base
+
+;
+;--- HpetProtoWdf_Device Coinstaller installation ------
+;
+
+[DestinationDirs]
+HpetProtoWdf_Device_CoInstaller_CopyFiles = 11
+
+[HpetProtoWdf_Device.NT.CoInstallers]
+AddReg=HpetProtoWdf_Device_CoInstaller_AddReg
+CopyFiles=HpetProtoWdf_Device_CoInstaller_CopyFiles
+
+[HpetProtoWdf_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[HpetProtoWdf_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[SourceDisksFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+[HpetProtoWdf_Device.NT.Wdf]
+KmdfService =  HpetProtoWdf, HpetProtoWdf_wdfsect
+[HpetProtoWdf_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="Kalycito Infotech Private Limited" ; TODO: add ManufacturerName
+ClassName="System" ; TODO: edit ClassName
+DiskName = "HpetProtoWdf Installation Disk"
+HpetProtoWdf.DeviceDesc = "HpetProtoWdf Device"
+HpetProtoWdf.SVCDESC = "HpetProtoWdf Service"
